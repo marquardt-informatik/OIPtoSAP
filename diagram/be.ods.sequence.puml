@@ -1,0 +1,55 @@
+@startuml BookingEngine to ODS
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/MQBroker.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+
+skinparam backgroundColor #EEEBDC
+skinparam handwritten true
+
+hide footbox
+
+title BookingEngine to ODS
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
+$AWSIcon(DynamoDB, " ", "BookingEngine") as B
+
+'participant "Booking Engine" as B
+box AWS Cloud
+$AWSIcon(APIGateway, "apiReceiver", "API Gateway") as API_BE_RECEIVER
+$AWSIcon(LambdaLambdaFunction, "fnReceiver", "Lambda") as FN_BE_RECEIVER
+$AWSIcon(MQBroker, "snsPublisher", "SNS") as SNS_BE_RECEIVER
+$AWSIcon(MQ, "sqsSubscriber", "SQS") as SQS_BE_RECEIVER
+$AWSIcon(LambdaLambdaFunction, "fnProcess", "Lambda") as FN_PROCESS
+$AWSIcon(DynamoDB, "ODS", "DB") as DB_ODS
+endbox
+
+group process and store BE events
+B -> API_BE_RECEIVER: bookingChanged(event)
+API_BE_RECEIVER -> FN_BE_RECEIVER: booingChanged(event)
+B <- FN_BE_RECEIVER: requestDetails(event,result)
+FN_BE_RECEIVER -> SNS_BE_RECEIVER: publishEvent(result)
+SNS_BE_RECEIVER -> SQS_BE_RECEIVER: publishedEvent(result)
+SQS_BE_RECEIVER -> FN_PROCESS: publishedEvent(result)
+FN_PROCESS -> FN_PROCESS: cleanupBooking(result)
+FN_PROCESS -> FN_PROCESS: enrichBooking(result)
+FN_PROCESS -> DB_ODS: storeBooking(result)
+
+note left: store business partner and contract data to S3
+end
+
+
+
+@enduml
