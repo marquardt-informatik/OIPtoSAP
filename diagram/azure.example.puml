@@ -1,0 +1,52 @@
+@startuml
+
+' !include "_styling.puml"
+
+left to right direction
+skinparam defaultTextAlignment center
+
+' !define MS_SPRITESPATH ../sprites
+!define MS_SPRITESPATH https://raw.githubusercontent.com/jballe/plantuml-microsoft-icons/master/sprites
+' !includeurl MS_SPRITESPATH/Cloud/_all.puml
+' !includeurl MS_SPRITESPATH/Enterprise/_all.puml
+' !includeurl MS_SPRITESPATH/OtherMicrosoftProd/_all.puml
+!includeurl MS_SPRITESPATH/Cloud/azure_app_service.puml
+!includeurl MS_SPRITESPATH/Cloud/microsoft_azure.puml
+!includeurl MS_SPRITESPATH/Cloud/azure_active_directory.puml
+!includeurl MS_SPRITESPATH/Enterprise/settings.puml
+!includeurl MS_SPRITESPATH/Enterprise/web.puml
+!includeurl MS_SPRITESPATH/Enterprise/web_server.puml
+!includeurl MS_SPRITESPATH/Enterprise/windows_server.puml
+!includeurl MS_SPRITESPATH/OtherMicrosoftProd/excel.puml
+!includeurl MS_SPRITESPATH/OtherMicrosoftProd/microsoft.puml
+
+'title Microsoft Solution <$microsoft>
+title Microsoft Solution MSIMG_MICROSOFT_C 
+
+
+cloud "Azure MSIMG_MICROSOFTAZURE_C" as azure {
+    rectangle "appservice \n MSIMG_AZUREAPPSERVICE_M" as appservice
+    database "ad \n MSIMG_AZUREACTIVEDIRECTORY_G" as ad
+    database "settings \n MSIMG_SETTINGS_G" as settings
+}
+
+rectangle "On premise" {
+    component "web <&heart>\n MSIMG_WEBSERVER_G" as webserver
+    component "web sprite\n <$azureappservice>"
+}
+
+rectangle "Locally" {
+    component "MSIMG_WINDOWSSERVER_G" as win
+    actor User
+    component "MSIMG_EXCEL_C" as excel
+}
+
+User --> excel
+excel --> webserver
+webserver --> appservice
+appservice--> ad
+appservice--> settings
+settings --> ad
+
+
+@enduml

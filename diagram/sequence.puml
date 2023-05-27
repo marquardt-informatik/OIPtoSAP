@@ -1,0 +1,98 @@
+@startuml
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+
+skinparam backgroundColor #EEEBDC
+skinparam handwritten true
+
+hide footbox
+
+title Dataflow overview
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
+$AWSIcon(DynamoDB, " ", "BookingEngine") as B
+
+'participant "Booking Engine" as B
+box AWS Cloud
+$AWSIcon(APIGateway, " ", "ITC") as T
+$AWSIcon(DynamoDB, " ", "ODS") as O
+endbox
+$AWSIcon(Internetalt1, " ", "Online Invoice Portal") as P
+$AWSIcon(Documents, " ", "SAP") as S
+'participant "Online Archive" as A
+$AWSIcon(SimpleStorageService, " ", "Archive") as A
+
+group master data synchronzation
+S -> S: make master data change
+S -> O: publish changes
+O -> S: query details
+S -> O: send details
+O -> O: store details
+note left: store business partner and contract data to S3
+end
+
+group collect all events from booking engine
+B -> B: changes on bookings
+B -> T: publish changes
+note right: <b>every new or changed booking </b> 
+T -> T: cleanup bookings
+T -> O: publish bookings
+O -> O: store bookings
+end
+
+group monthly bulk transfer
+O->O:enrich bookings
+note right: add business partner and contract data
+O -> S: publish bookings
+note right: <b>initial transfer at the 2nd of each month</b>
+S -> S: process CIT
+end
+
+group  billing cycle
+S->S: post invoices
+S->A: send document to archive
+S->O:publish changes
+O->S:query details
+S->O:send details
+O->O:store data
+note left: store posted entries and invoiced/credited BIT to S3
+O->P: publish changes
+P->P: store changes
+P->A: query archive
+A->P: return archived document
+end
+
+group Corrections
+P->P: changes on invoices
+P->O:publish changes
+O->O: enrich changes
+note right: add business partner and contract data
+O->S: publish changes
+note right: direct transfer w/o delay
+S->S: post corrections
+note left: daily process
+S->A: send document to archive
+S->O:publish changes
+O->S:query details
+S->O:send details
+O->O:store data
+note left: store posted entries and invoiced/credited BIT to S3
+O->P: publish changes
+P->P: store changes
+P->A: query archive
+A->P: return archived document
+end
+
+@enduml
