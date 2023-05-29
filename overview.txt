@@ -1,0 +1,51 @@
++--------+---------------------------------------------+-------------------+-------------------+
+| Nummer | Schritt                                      | Ausgangspartizipant | Zielpartizipant   |
++--------+---------------------------------------------+-------------------+-------------------+
+| 101    | Master Data Change Event                     | SAP               | APISAPChanges     |
+| 102    | Forward Event                                | APISAPChanges     | MasterDataProcessor |
+| 103    | Forward Event                                | MasterDataProcessor | SAPAPI            |
+| 104    | Forward request                              | SAPAPI            | SAP               |
+| 105    | SAP Data Response                            | SAP               | SAPAPI            |
+| 106    | SAP Data Response                            | SAPAPI            | MasterDataProcessor |
+| 107    | Query Master Data                            | MasterDataProcessor | Database          |
+| 201    | Send BE Reservation Event                    | BookingEngine     | APIGateway        |
+| 202    | Forward BE Event                             | APIGateway        | ReservationReceiver |
+| 203    | Publish BE Event                             | ReservationReceiver | SNS               |
+| 204    | BE Confirmation                              | SNS               | ReservationReceiver |
+| 205    | Send BE Event                                | ReservationReceiver | SQS               |
+| 206    | BE Event Message                             | SQS               | ReservationProcessor |
+| 301    | Time-triggered Event                         | Scheduler         | ReservationProcessor |
+| 302    | Send Time-triggered Data to SAP API          | ReservationProcessor | SAPAPI            |
+| 303    | Foreward CIT to BRIM                         | SAPAPI            | SAP               |
+| 304    | Response from BRIM                           | SAP               | SAPAPI            |
+| 305    | CIT Response                                 | SAPAPI            | ReservationProcessor |
+| 306    | Save CIT Time-triggered Data                 | ReservationProcessor | Database          |
+| 401    | SAP Posting Event                            | SAP               | APISAPChanges     |
+| 402    | Forward SAP Posting Event                     | APISAPChanges     | ReservationProcessor |
+| 403    | Query SAP Data                               | ReservationProcessor | SAPAPI            |
+| 404    | Foreward SAP Data request                     | SAPAPI            | SAP               |
+| 405    | SAP Data Response                            | SAP               | SAPAPI            |
+| 406    | Foreward SAP Data Response                    | SAPAPI            | ReservationProcessor |
+| 407    | Query ODS Reservation Data                    | ReservationProcessor | Database          |
+| 501    | Time-triggered Event                         | Scheduler         | ReservationProcessor |
+| 502    | Send SAP Postings and Master Data             | ReservationProcessor | OIPGateway        |
+| 503    | Forward SAP Postings and Master Data Event    | OIPGateway        | OIPProcessor      |
+| 504    | Process SAP Postings and Master Data Event    | OIPProcessor      | OIPGateway        |
+| 505    | Confirmation                                 | OIPGateway        | ReservationProcessor |
+| 506    | Query Master Data                            | ReservationProcessor | Database          |
+| 601    | Invoice Correction Event                     | OIPProcessor      | APIGateway        |
+| 602    | Forward OIP Correction Event                  | APIGateway        | ReservationReceiver |
+| 603    | Publish OIP Correction Event                  | ReservationReceiver | SNS               |
+| 604    | OIP Confirmation                             | SNS               | ReservationReceiver |
+| 605    | Send OIP Correction Event                     | ReservationReceiver | SQS               |
+| 606    | OIP Event Message                            | SQS               | ReservationProcessor |
+| 701    | Time-triggered Event                         | Scheduler         | ReservationProcessor |
+| 702    | Send Meetago Event                            | LegacyProcessor   | SNS               |
+| 703    | Meetago Event Message                         | SNS               | ReservationProcessor |
+| 801    | Query Meetago Last Date Changed               | LegacyProcessor   | Database          |
+| 802    | Meetago Reservations                          | MeeetagoAPI       | LegacyProcessor   |
+| 803    | Publish Meetago Event                         | LegacyProcessor   | SNS               |
+| 804    | Meetago Confirmation                          | SNS               | LegacyProcessor   |
+| 805    | Send Meetago Event                            | LegacyProcessor   | SQS               |
+| 806    | Meetago Event Message                         | SQS               | ReservationProcessor |
++--------+---------------------------------------------+-------------------+-------------------+

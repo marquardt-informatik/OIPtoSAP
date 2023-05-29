@@ -1,0 +1,297 @@
+@startuml Integrate Legacy Systems, ODS and SAP
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/MQBroker.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+'skinparam backgroundColor #EEEBDC
+skinparam handwritten true
+
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
+
+hide footbox
+
+box Legacy Systems
+$AWSIcon(Internetalt1, "Meetago", "") as MeeetagoAPI
+$AWSIcon(Internetalt1, "OIP Processor", "") as OIPProcessor
+$AWSIcon(Internetalt1, "OIP Interface", "") as OIPGateway
+$AWSIcon(Internetalt1, "BookingEngine", "") as BookingEngine
+endbox
+
+box AWS Cloud
+$AWSIcon(APIGateway, "Reservation Receiver", "API Gateway") as APIGateway
+$AWSIcon(LambdaLambdaFunction, "Reservation Receiver", "Lambda") as ReservationReceiver
+$AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
+$AWSIcon(MQ, "Subscriber", "SQS") as SQS
+$AWSIcon(LambdaLambdaFunction, "Legacy Processor", "Lambda") as LegacyProcessor
+$AWSIcon(LambdaLambdaFunction, "Master Data Processor", "Lambda") as MasterDataProcessor
+$AWSIcon(LambdaLambdaFunction, "Reservation Processor", "Lambda") as ReservationProcessor
+$AWSIcon(LambdaLambdaFunction, "Data Correction", "Lambda") as DataCorrection
+$AWSIcon(LambdaLambdaFunction, "Enrichment", "Lambda") as Enrichment
+$AWSIcon(DynamoDB, "ODS", "Database") as Database
+$AWSIcon(LambdaLambdaFunction, "Scheduler", "Lambda") as Scheduler
+$AWSIcon(APIGateway, "SAP Receiver", "API Gateway") as APISAPChanges
+endbox
+
+box SAP
+$AWSIcon(Internetalt1, "SAP API", "Endpunkt") as SAPAPI
+$AWSIcon(Internetalt1, "SAP", "") as SAP
+endbox
+
+title Integrate Legacy Systems, ODS and SAP
+
+autonumber  101 "<b>[000]"
+group process master data change in SAP
+SAP -> APISAPChanges: Master Data Change Event
+activate APISAPChanges
+APISAPChanges -> MasterDataProcessor: Forward Event
+deactivate APISAPChanges
+activate MasterDataProcessor
+MasterDataProcessor -> SAPAPI: Query SAP Data
+activate SAPAPI
+SAPAPI->SAP: Foreward request
+activate SAP
+SAP --> SAPAPI: SAP Data Response
+deactivate SAP
+SAPAPI --> MasterDataProcessor: SAP Data Response
+deactivate SAPAPI
+MasterDataProcessor -> Database: Query Master Data
+activate Database
+Database --> MasterDataProcessor: Master Data
+deactivate Database
+MasterDataProcessor -> MasterDataProcessor: Find Differences
+MasterDataProcessor -> Database: Save Differences
+activate Database
+Database --> MasterDataProcessor: Confirmation
+deactivate Database
+deactivate MasterDataProcessor
+end
+
+
+autonumber  201 "<b>[000]"
+group process and store BE events
+BookingEngine -> APIGateway: Send BE Reservation Event
+activate APIGateway
+APIGateway -> ReservationReceiver: Forward BE Event
+deactivate APIGateway
+activate ReservationReceiver
+ReservationReceiver -> SNS: Publish BE Event
+activate SNS
+SNS --> ReservationReceiver: BE Confirmation
+deactivate SNS
+ReservationReceiver -> SQS: Send BE Event
+activate SQS
+SQS -> ReservationProcessor: BE Event Message
+deactivate SQS
+deactivate ReservationReceiver
+
+activate ReservationProcessor
+ReservationProcessor -> BookingEngine: Retrieve BE Booking Details
+activate BookingEngine
+BookingEngine --> ReservationProcessor: BE Booking Details
+deactivate BookingEngine
+ReservationProcessor -> DataCorrection: Correct BE Data Errors
+activate DataCorrection
+DataCorrection --> ReservationProcessor: Corrected BE Booking Details
+deactivate DataCorrection
+ReservationProcessor -> Database: Query ODS Master Data
+activate Database
+Database --> ReservationProcessor: ODS Master Data
+deactivate Database
+ReservationProcessor -> Enrichment: Enrich BE Booking Details
+activate Enrichment
+Enrichment --> ReservationProcessor: Enriched BE Booking Details
+deactivate Enrichment
+ReservationProcessor -> Database: Save BE Booking Details
+activate Database
+Database --> ReservationProcessor: Confirmation
+deactivate Database
+deactivate ReservationProcessor
+end
+
+autonumber  301 "<b>[000]"
+group monthly bulk transfer
+activate Scheduler
+Scheduler --> ReservationProcessor: Time-triggered Event
+activate ReservationProcessor
+ReservationProcessor -> SAPAPI: Send Time-triggered Data to SAP API
+activate SAPAPI
+SAPAPI -> SAP: Foreward CIT to BRIM
+activate SAP
+SAPAPI <-- SAP: Response from BRIM
+deactivate SAP
+SAPAPI --> ReservationProcessor: CIT Response
+deactivate SAPAPI
+ReservationProcessor -> Database: Save CIT Time-triggered Data
+activate Database
+Database --> ReservationProcessor: Confirmation
+deactivate Database
+deactivate ReservationProcessor
+end
+
+autonumber 401 "<b>[000]"
+group process SAP Postings
+SAP -> APISAPChanges: SAP Posting Event
+activate APISAPChanges
+APISAPChanges -> ReservationProcessor: Forward SAP Posting Event
+deactivate APISAPChanges
+activate ReservationProcessor
+ReservationProcessor -> SAPAPI: Query SAP Data
+activate SAPAPI
+SAPAPI->SAP: Foreward SAP Data request
+activate SAP
+SAP --> SAPAPI: SAP Data Response
+deactivate SAP
+SAPAPI --> ReservationProcessor: Foreward SAP Data Response
+deactivate SAPAPI
+ReservationProcessor -> Database: Query ODS Reservation Data
+activate Database
+Database --> ReservationProcessor: ODS Reservation Data
+deactivate Database
+ReservationProcessor -> ReservationProcessor: Find Differences
+ReservationProcessor -> Database: Save Differences
+activate Database
+Database --> ReservationProcessor: Confirmation
+deactivate Database
+deactivate ReservationProcessor
+end
+
+autonumber 501 "<b>[000]"
+group foreward SAP Postings and Master Data to OIP
+Scheduler --> ReservationProcessor: Time-triggered Event
+activate ReservationProcessor
+ReservationProcessor -> OIPGateway: Send SAP Postings and Master Data
+activate OIPGateway
+OIPGateway -> OIPProcessor: Forward SAP Postings and Master Data Event
+activate OIPProcessor
+OIPProcessor -> OIPProcessor: process SAP Postings and Master Data Event
+OIPProcessor --> OIPGateway: Confirmation
+deactivate OIPProcessor
+OIPGateway --> ReservationProcessor: Confirmation
+deactivate OIPGateway
+deactivate ReservationProcessor
+end
+
+autonumber 601 "<b>[000]"
+group foreward OIP reservation changes
+OIPProcessor -> APIGateway: Invoice Correction Event
+activate APIGateway
+APIGateway -> ReservationReceiver: Forward OIP Correction Event
+deactivate APIGateway
+activate ReservationReceiver
+ReservationReceiver -> SNS: Publish OIP Correction Event
+activate SNS
+SNS --> ReservationReceiver: Confirmation
+deactivate SNS
+ReservationReceiver -> SQS: Send OIP Correction Event
+activate SQS
+SQS -> ReservationProcessor: Event Message
+deactivate SQS
+deactivate ReservationReceiver
+
+activate ReservationProcessor
+ReservationProcessor -> OIPProcessor: Retrieve OIP Booking Details
+activate OIPProcessor
+OIPProcessor --> ReservationProcessor: OIP Booking Details
+deactivate OIPProcessor
+ReservationProcessor -> Database: Query Master Data
+activate Database
+Database --> ReservationProcessor: Master Data
+deactivate Database
+ReservationProcessor -> Enrichment: Enrich OIP Booking Details
+activate Enrichment
+Enrichment --> ReservationProcessor: Enriched OIP Booking Details
+deactivate Enrichment
+ReservationProcessor -> Database: Save OIP Booking Details
+activate Database
+Database --> ReservationProcessor: Confirmation
+deactivate Database
+deactivate ReservationProcessor
+end
+
+autonumber 701 "<b>[000]"
+group foreward OIP master data changes
+OIPProcessor -> APIGateway: OIP Master data change Event
+activate APIGateway
+APIGateway -> MasterDataProcessor: Forward OIP Master Data Event
+deactivate APIGateway
+activate MasterDataProcessor
+MasterDataProcessor -> OIPGateway: Query OIP Master Data
+activate OIPGateway
+OIPGateway->OIPProcessor: Foreward request
+activate OIPProcessor
+OIPProcessor --> OIPGateway: OIP Master Data Response
+deactivate OIPProcessor
+OIPGateway --> MasterDataProcessor: OIP Master Data Response
+deactivate OIPGateway
+MasterDataProcessor -> Database: Query Master Data
+activate Database
+Database --> MasterDataProcessor: Master Data
+deactivate Database
+MasterDataProcessor -> MasterDataProcessor: Find Differences
+MasterDataProcessor -> Database: Save Differences
+activate Database
+Database --> MasterDataProcessor: Confirmation
+deactivate Database
+deactivate MasterDataProcessor
+end
+
+autonumber 801 "<b>[000]"
+group query Meetago Database
+Scheduler --> LegacyProcessor: Time-triggered Event
+activate LegacyProcessor
+LegacyProcessor -> Database: Query Meetago Last Date Changed
+activate Database
+Database --> LegacyProcessor: Last Meetago Date Changed
+deactivate Database
+LegacyProcessor -> MeeetagoAPI: Query Meetago Reservation after last transfer
+activate MeeetagoAPI
+MeeetagoAPI --> LegacyProcessor: Meetago Reservations
+deactivate MeeetagoAPI
+
+LegacyProcessor -> SNS: Publish Meetago Event
+activate SNS
+SNS --> LegacyProcessor: Confirmation
+deactivate SNS
+LegacyProcessor -> SQS: Send Meetago Event
+activate SQS
+SQS -> ReservationProcessor: Event Message
+deactivate SQS
+
+activate ReservationProcessor
+ReservationProcessor -> MeeetagoAPI: Retrieve Meetago Booking Details
+activate MeeetagoAPI
+MeeetagoAPI --> ReservationProcessor: Meetago Booking Details
+deactivate MeeetagoAPI
+ReservationProcessor -> DataCorrection: Correct Meetago Data Errors
+activate DataCorrection
+DataCorrection --> ReservationProcessor: Corrected Meetago Booking Details
+deactivate DataCorrection
+ReservationProcessor -> Database: Query Master Data
+activate Database
+Database --> ReservationProcessor: Master Data
+deactivate Database
+ReservationProcessor -> Enrichment: Enrich Meetago Booking Details
+activate Enrichment
+Enrichment --> ReservationProcessor: Enriched Meetago Booking Details
+deactivate Enrichment
+ReservationProcessor -> Database: Save Meetago Booking Details
+activate Database
+Database --> ReservationProcessor: Confirmation
+deactivate Database
+deactivate ReservationProcessor
+end
+
+@enduml

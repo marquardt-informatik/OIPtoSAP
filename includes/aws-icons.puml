@@ -16,7 +16,7 @@
 
 
 skinparam backgroundColor #EEEBDC
-'skinparam handwritten true
+skinparam handwritten true
 
 !procedure $AWSIcon($service, $line1, $line2="")
 participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
