@@ -1,0 +1,24 @@
+@startuml
+
+actor "SAP Master Data Change" as MasterDataChange
+participant "API Gateway" as APIGateway
+participant Lambda
+participant "SAP API" as SAPAPI
+participant Database
+
+title SAP Master Data Change
+
+MasterDataChange -> APIGateway: Master Data Change Event
+APIGateway -> Lambda: Forward Event
+activate Lambda
+Lambda -> SAPAPI: Query SAP Data
+activate SAPAPI
+SAPAPI --> Lambda: SAP Data Response
+deactivate SAPAPI
+Lambda -> Database: Save Data
+activate Database
+Database --> Lambda: Confirmation
+deactivate Database
+deactivate Lambda
+
+@enduml

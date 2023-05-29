@@ -1,0 +1,23 @@
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/MQBroker.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+
+
+skinparam backgroundColor #EEEBDC
+'skinparam handwritten true
+
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
