@@ -31,7 +31,7 @@ $AWSIcon(Internetalt1, "BookingEngine", "") as BookingEngine
 endbox
 
 box AWS Cloud
-$AWSIcon(APIGateway, "Reservation Receiver", "API Gateway") as APIGateway
+$AWSIcon(APIGateway, "Reservation\n<b>Receiver", "API Gateway") as APIGateway
 $AWSIcon(LambdaLambdaFunction, "Reservation Receiver", "Lambda") as ReservationReceiver
 $AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
 $AWSIcon(MQ, "Subscriber", "SQS") as SQS
@@ -82,7 +82,7 @@ end
 
 autonumber  201 "<b>[000]"
 group process and store BE events
-BookingEngine -> APIGateway: Send BE Reservation Event
+BookingEngine -> APIGateway: Send BE \nReservation Event
 activate APIGateway
 APIGateway -> ReservationReceiver: Forward BE Event
 deactivate APIGateway
@@ -266,9 +266,11 @@ activate SNS
 SNS --> LegacyProcessor: Confirmation
 deactivate SNS
 LegacyProcessor -> SQS: Send Meetago Event
+deactivate LegacyProcessor
 activate SQS
 SQS -> ReservationProcessor: Event Message
 deactivate SQS
+
 
 activate ReservationProcessor
 ReservationProcessor -> MeeetagoAPI: Retrieve Meetago Booking Details
@@ -294,4 +296,45 @@ deactivate Database
 deactivate ReservationProcessor
 end
 
+autonumber 901 "<b>[000]"
+group process reservation changes
+Scheduler --> ReservationProcessor: Time-triggered Event
+activate ReservationProcessor
+ReservationProcessor -> Database: Query Changes
+activate Database
+Database --> ReservationProcessor: Changes Response
+deactivate Database
+ReservationProcessor -> SAPAPI: Send Time-triggered Data to SAP API
+activate SAPAPI
+SAPAPI -> SAP: Foreward corrected CIT to BRIM
+activate SAP
+SAPAPI <-- SAP: Response from BRIM
+deactivate SAP
+SAPAPI --> ReservationProcessor: CIT Response
+deactivate SAPAPI
+ReservationProcessor -> Database: Save CIT Response
+activate Database
+Database --> ReservationProcessor: Confirmation
+deactivate Database
+deactivate ReservationProcessor
+end
+
+autonumber 1001 "<b>[000]"
+group process master data changes
+Scheduler --> MasterDataProcessor: Time-triggered Event
+activate MasterDataProcessor
+MasterDataProcessor -> Database: Query Master Data
+activate Database
+Database --> MasterDataProcessor: Master Data
+deactivate Database
+MasterDataProcessor -> SAPAPI: Send Time-triggered Data to SAP API
+activate SAPAPI
+SAPAPI->SAP: Foreward SAP Data request
+activate SAP
+SAP --> SAPAPI: SAP Data Response
+deactivate SAP
+SAPAPI --> MasterDataProcessor: Foreward SAP Data Response
+deactivate SAPAPI
+deactivate MasterDataProcessor
+end
 @enduml
