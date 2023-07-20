@@ -31,8 +31,9 @@ $AWSIcon(Internetalt1, "BookingEngine", "") as BookingEngine
 endbox
 
 box AWS Cloud
-$AWSIcon(APIGateway, "Reservation\n<b>Receiver", "API Gateway") as APIGateway
+$AWSIcon(APIGateway, "Legacy API", "API Gateway") as LegacyAPI
 $AWSIcon(LambdaLambdaFunction, "Reservation Receiver", "Lambda") as ReservationReceiver
+$AWSIcon(LambdaLambdaFunction, "Master Data Receiver", "Lambda") as MasterDataReceiver
 $AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
 $AWSIcon(MQ, "Subscriber", "SQS") as SQS
 $AWSIcon(LambdaLambdaFunction, "Legacy Processor", "Lambda") as LegacyProcessor
@@ -82,10 +83,10 @@ end
 
 autonumber  201 "<b>[000]"
 group process and store BE events
-BookingEngine -> APIGateway: Send BE \nReservation Event
-activate APIGateway
-APIGateway -> ReservationReceiver: Forward BE Event
-deactivate APIGateway
+BookingEngine -> LegacyAPI: Send BE \nReservation Event
+activate LegacyAPI
+LegacyAPI -> ReservationReceiver: Forward BE Event
+deactivate LegacyAPI
 activate ReservationReceiver
 ReservationReceiver -> SNS: Publish BE Event
 activate SNS
@@ -186,10 +187,10 @@ end
 
 autonumber 601 "<b>[000]"
 group foreward OIP reservation changes
-OIPProcessor -> APIGateway: Invoice Correction Event
-activate APIGateway
-APIGateway -> ReservationReceiver: Forward OIP Correction Event
-deactivate APIGateway
+OIPProcessor -> LegacyAPI: Invoice Correction Event
+activate LegacyAPI
+LegacyAPI -> ReservationReceiver: Forward OIP Correction Event
+deactivate LegacyAPI
 activate ReservationReceiver
 ReservationReceiver -> SNS: Publish OIP Correction Event
 activate SNS
@@ -198,17 +199,21 @@ deactivate SNS
 ReservationReceiver -> SQS: Send OIP Correction Event
 activate SQS
 SQS -> ReservationProcessor: Event Message
-deactivate SQS
 deactivate ReservationReceiver
+deactivate SQS
 
 activate ReservationProcessor
-ReservationProcessor -> OIPProcessor: Retrieve OIP Booking Details
+ReservationProcessor -> OIPGateway: Query OIP Booking Details
+activate OIPGateway
+OIPGateway->OIPProcessor: Foreward request
 activate OIPProcessor
-OIPProcessor --> ReservationProcessor: OIP Booking Details
+OIPProcessor --> OIPGateway: OIP Booking Details Response
 deactivate OIPProcessor
-ReservationProcessor -> Database: Query Master Data
+OIPGateway --> ReservationProcessor: OIP Booking Details Response
+deactivate OIPGateway
+ReservationProcessor -> Database: Query Booking Details
 activate Database
-Database --> ReservationProcessor: Master Data
+Database --> ReservationProcessor: Booking Details
 deactivate Database
 ReservationProcessor -> Enrichment: Enrich OIP Booking Details
 activate Enrichment
@@ -223,10 +228,21 @@ end
 
 autonumber 701 "<b>[000]"
 group foreward OIP master data changes
-OIPProcessor -> APIGateway: OIP Master data change Event
-activate APIGateway
-APIGateway -> MasterDataProcessor: Forward OIP Master Data Event
-deactivate APIGateway
+OIPProcessor -> LegacyAPI: OIP Master data change Event
+activate LegacyAPI
+LegacyAPI -> MasterDataReceiver: Forward OIP Master Data Event
+deactivate LegacyAPI
+activate MasterDataReceiver
+MasterDataReceiver -> SNS: Publish Master data change Event
+activate SNS
+SNS --> MasterDataReceiver: Confirmation
+deactivate SNS
+MasterDataReceiver -> SQS: Send OIP Correction Event
+activate SQS
+SQS -> MasterDataProcessor: Event Message
+deactivate MasterDataReceiver
+deactivate SQS
+
 activate MasterDataProcessor
 MasterDataProcessor -> OIPGateway: Query OIP Master Data
 activate OIPGateway
