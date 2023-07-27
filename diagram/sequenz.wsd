@@ -1,0 +1,69 @@
+@startuml
+actor "Datensender außerhalb AWS" as Sender
+participant "AWS API Gateway" as APIGateway
+participant "AWS Lambda" as Lambda1
+participant "AWS SNS" as SNS
+participant "AWS SQS" as SQS
+participant "AWS Lambda" as Lambda2
+database "Datenbank" as DB
+
+Sender -> APIGateway: Daten senden
+activate APIGateway
+
+APIGateway -> Lambda1: Daten weiterleiten
+activate Lambda1
+
+Lambda1 -> SNS: Daten veröffentlichen
+activate SNS
+
+SNS --> Lambda1: Bestätigung der Verarbeitung
+deactivate SNS
+
+Lambda1 --> APIGateway: Bestätigung der Verarbeitung
+deactivate Lambda1
+
+APIGateway --> Sender: Bestätigung der Verarbeitung
+deactivate APIGateway
+
+Lambda1 -> SQS: Daten veröffentlichen
+activate SQS
+
+SQS -> Lambda2: Daten lesen
+activate Lambda2
+
+Lambda2 -> DB: Daten verarbeiten und speichern
+activate DB
+
+Lambda2 --> SQS: Bestätigung der Verarbeitung
+deactivate Lambda2
+
+SQS --> Lambda2: Weitere Daten verfügbar
+SQS -> Lambda2: Daten lesen
+activate Lambda2
+
+Lambda2 -> DB: Daten verarbeiten und speichern
+activate DB
+
+Lambda2 --> SQS: Bestätigung der Verarbeitung
+deactivate Lambda2
+
+SQS --> Lambda2: Weitere Daten verfügbar
+SQS -> Lambda2: Daten lesen
+activate Lambda2
+
+Lambda2 -> DB: Daten verarbeiten und speichern
+activate DB
+
+Lambda2 --> SQS: Bestätigung der Verarbeitung
+deactivate Lambda2
+
+DB --> Lambda2: Ergebnis der Datenverarbeitung
+activate Lambda2
+
+Lambda2 -> DB: Ergebnis speichern
+deactivate DB
+
+Lambda2 --> Sender: Rückmeldung an Datensender
+deactivate Lambda2
+
+@enduml

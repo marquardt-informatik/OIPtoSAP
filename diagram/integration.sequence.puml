@@ -173,6 +173,10 @@ autonumber 501 "<b>[000]"
 group foreward SAP Postings and Master Data to OIP
 Scheduler --> ReservationProcessor: Time-triggered Event
 activate ReservationProcessor
+ReservationProcessor -> Database: Query ODS Data
+activate Database
+Database --> ReservationProcessor: ODS Data
+deactivate Database
 ReservationProcessor -> OIPGateway: Send SAP Postings and Master Data
 activate OIPGateway
 OIPGateway -> OIPProcessor: Forward SAP Postings and Master Data Event
