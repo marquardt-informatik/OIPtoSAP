@@ -199,11 +199,11 @@ activate ReservationReceiver
 ReservationReceiver -> SNS: Publish OIP Correction Event
 activate SNS
 SNS --> ReservationReceiver: Confirmation
+deactivate ReservationReceiver
+SNS -> SQS: Send OIP Correction Event
 deactivate SNS
-ReservationReceiver -> SQS: Send OIP Correction Event
 activate SQS
 SQS -> ReservationProcessor: Event Message
-deactivate ReservationReceiver
 deactivate SQS
 
 activate ReservationProcessor
@@ -240,11 +240,11 @@ activate MasterDataReceiver
 MasterDataReceiver -> SNS: Publish Master data change Event
 activate SNS
 SNS --> MasterDataReceiver: Confirmation
+deactivate MasterDataReceiver
+SNS -> SQS: Send OIP Correction Event
 deactivate SNS
-MasterDataReceiver -> SQS: Send OIP Correction Event
 activate SQS
 SQS -> MasterDataProcessor: Event Message
-deactivate MasterDataReceiver
 deactivate SQS
 
 activate MasterDataProcessor
