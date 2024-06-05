@@ -1,0 +1,32 @@
+@startuml
+actor Traveler
+participant "Booking Engine" as BookingEngine
+participant "Paywall" as Paywall
+participant "NAV" as NAV
+participant "OIP" as OIP
+participant "D3 Archive" as D3Archive
+actor Hotel
+
+Traveler -> BookingEngine : Books overnight stay\n Cost 100 EUR
+BookingEngine -> Paywall : Sends reservation
+Traveler -> Paywall : Authorize Payment
+... some time later ...
+Hotel -> Paywall : Charges Stay
+Paywall -> Paywall : Calculates commission
+Paywall -> Paywall : Transfer Payment \nfrom Traveler Stripe Account\nto HRS Stripe Account\n 100 EUR
+Paywall -> Paywall : Transfer payment of overnight stay\nfrom HRS Stripe Account \nto Hotel Stripe Account\n 100 EUR
+Paywall -> Paywall : Transfer commission amount\nfrom Hotel Stripe Account \nto HRS Stripe Account\n 10 EUR
+Paywall -> NAV : Sends all payment information
+... some time later ...
+Paywall -> Paywall : Triggers daily payout
+Paywall -> NAV : Sends payout settlement
+NAV -> NAV : Posts invoice(s)
+NAV -> NAV : Posts payment(s)
+NAV -> D3Archive : Archives PDF documents
+NAV -> OIP : Sends invoice information
+NAV -> Hotel : Sends invoice
+... some time later ...
+Hotel -> OIP : lookup invoices and payments\non demand
+... optional ...
+NAV -> Paywall : Sends done payment(s) and invoice(s)
+@enduml
