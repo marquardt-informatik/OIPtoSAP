@@ -3,6 +3,7 @@ actor Traveler
 participant "Booking Engine" as BookingEngine
 participant "Paywall" as Paywall
 participant "NAV" as NAV
+participant "NAV or IG" as NAV_OR_IG
 participant "OIP" as OIP
 participant "D3 Archive" as D3Archive
 actor Hotel
@@ -16,15 +17,17 @@ Paywall -> Paywall : Calculates commission
 Paywall -> Paywall : Transfer Payment \nfrom Traveler Stripe Account\nto HRS Stripe Account\n 100 EUR
 Paywall -> Paywall : Transfer payment of overnight stay\nfrom HRS Stripe Account \nto Hotel Stripe Account\n 100 EUR
 Paywall -> Paywall : Transfer commission amount\nfrom Hotel Stripe Account \nto HRS Stripe Account\n 10 EUR
-Paywall -> NAV : Sends all payment information
+Paywall -> NAV : (1), (2) Sends all payment information
 ... some time later ...
 Paywall -> Paywall : Triggers daily payout
-Paywall -> NAV : Sends payout settlement
+Paywall -> NAV : (3) Sends payout settlement
 NAV -> NAV : Posts invoice(s)
 NAV -> NAV : Posts payment(s)
-NAV -> D3Archive : Archives PDF documents
-NAV -> OIP : Sends invoice information
-NAV -> Hotel : Sends invoice
+Paywall -> NAV_OR_IG : Sends payment information
+NAV_OR_IG -> D3Archive : Archives PDF documents
+NAV_OR_IG -> OIP : Sends invoice information
+NAV_OR_IG -> Hotel : Sends invoice
+NAV_OR_IG -> Traveler : Sends booker invoice
 ... some time later ...
 Hotel -> OIP : lookup invoices and payments\non demand
 ... optional ...
