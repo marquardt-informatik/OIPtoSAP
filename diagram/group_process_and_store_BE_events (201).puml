@@ -89,7 +89,7 @@ activate Enrichment
 Enrichment --> ReservationProcessor: Enriched BE Booking Details
 deactivate Enrichment
 ReservationProcessor -> Database: Save BE Booking Details
-activate Databaseß
+activate Database
 Database --> ReservationProcessor: Confirmation
 deactivate Database
 deactivate ReservationProcessor
