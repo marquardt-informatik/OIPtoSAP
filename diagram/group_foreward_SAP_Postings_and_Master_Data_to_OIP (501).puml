@@ -1,0 +1,76 @@
+@startuml Group foreward SAP Postings and Master Data to OIP
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/MQBroker.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+'skinparam backgroundColor #EEEBDC
+skinparam handwritten true
+
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
+
+hide footbox
+
+box Legacy Systems
+$AWSIcon(Internetalt1, "Meetago", "") as MeeetagoAPI
+$AWSIcon(Internetalt1, "OIP Processor", "") as OIPProcessor
+$AWSIcon(Internetalt1, "OIP Interface", "") as OIPGateway
+$AWSIcon(Internetalt1, "BookingEngine", "") as BookingEngine
+endbox
+
+box AWS Cloud
+$AWSIcon(APIGateway, "Legacy API", "API Gateway") as LegacyAPI
+$AWSIcon(LambdaLambdaFunction, "Reservation Receiver", "Lambda") as ReservationReceiver
+$AWSIcon(LambdaLambdaFunction, "Master Data Receiver", "Lambda") as MasterDataReceiver
+$AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
+$AWSIcon(MQ, "Subscriber", "SQS") as SQS
+$AWSIcon(LambdaLambdaFunction, "Legacy Processor", "Lambda") as LegacyProcessor
+$AWSIcon(LambdaLambdaFunction, "Master Data Processor", "Lambda") as MasterDataProcessor
+$AWSIcon(LambdaLambdaFunction, "Reservation Processor", "Lambda") as ReservationProcessor
+$AWSIcon(LambdaLambdaFunction, "Data Correction", "Lambda") as DataCorrection
+$AWSIcon(LambdaLambdaFunction, "Enrichment", "Lambda") as Enrichment
+$AWSIcon(DynamoDB, "ODS", "Database") as Database
+$AWSIcon(LambdaLambdaFunction, "Scheduler", "Lambda") as Scheduler
+$AWSIcon(APIGateway, "SAP Receiver", "API Gateway") as APISAPChanges
+endbox
+
+box SAP
+$AWSIcon(Internetalt1, "SAP API", "Endpunkt") as SAPAPI
+$AWSIcon(Internetalt1, "SAP", "") as SAP
+endbox
+
+title Group foreward SAP Postings and Master Data to OIP
+
+autonumber 501 "<b>[000]"
+group foreward SAP Postings and Master Data to OIP
+Scheduler --> ReservationProcessor: Time-triggered Event
+activate ReservationProcessor
+ReservationProcessor -> Database: Query ODS Data
+activate Database
+Database --> ReservationProcessor: ODS Data
+deactivate Database
+ReservationProcessor -> OIPGateway: Send SAP Postings and Master Data
+activate OIPGateway
+OIPGateway -> OIPProcessor: Forward SAP Postings and Master Data Event
+activate OIPProcessor
+OIPProcessor -> OIPProcessor: process SAP Postings and Master Data Event
+OIPProcessor --> OIPGateway: Confirmation
+deactivate OIPProcessor
+OIPGateway --> ReservationProcessor: Confirmation
+deactivate OIPGateway
+deactivate ReservationProcessor
+end
+
+@enduml
