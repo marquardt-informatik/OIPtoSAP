@@ -1,4 +1,4 @@
-@startuml Group process master data change in SAP
+@startuml Integrate Legacy Systems, ODS and SAP
 !define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
 !include AWSPuml/AWSCommon.puml
 !include AWSPuml/ApplicationIntegration/APIGateway.puml
@@ -51,7 +51,7 @@ $AWSIcon(Internetalt1, "SAP API", "Endpunkt") as SAPAPI
 $AWSIcon(Internetalt1, "SAP", "") as SAP
 endbox
 
-title Group process master data change in SAPß
+title Integrate Legacy Systems, ODS and SAP
 
 autonumber  101 "<b>[000]"
 group process master data change in SAP

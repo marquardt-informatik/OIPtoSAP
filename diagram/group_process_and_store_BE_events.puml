@@ -1,4 +1,4 @@
-@startuml Group process master data change in SAP
+@startuml Group process and store BE events
 !define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
 !include AWSPuml/AWSCommon.puml
 !include AWSPuml/ApplicationIntegration/APIGateway.puml
@@ -51,33 +51,48 @@ $AWSIcon(Internetalt1, "SAP API", "Endpunkt") as SAPAPI
 $AWSIcon(Internetalt1, "SAP", "") as SAP
 endbox
 
-title Group process master data change in SAP
+title Group process and store BE events
 
-autonumber  101 "<b>[000]"
-group process master data change in SAP
-SAP -> APISAPChanges: Master Data Change Event
-activate APISAPChanges
-APISAPChanges -> MasterDataProcessor: Forward Event
-deactivate APISAPChanges
-activate MasterDataProcessor
-MasterDataProcessor -> SAPAPI: Query SAP Data
-activate SAPAPI
-SAPAPI->SAP: Foreward request
-activate SAP
-SAP --> SAPAPI: SAP Data Response
-deactivate SAP
-SAPAPI --> MasterDataProcessor: SAP Data Response
-deactivate SAPAPI
-MasterDataProcessor -> Database: Query Master Data
+
+autonumber  201 "<b>[000]"
+group process and store BE events
+BookingEngine -> LegacyAPI: Send BE \nReservation Event
+activate LegacyAPI
+LegacyAPI -> ReservationReceiver: Forward BE Event
+deactivate LegacyAPI
+activate ReservationReceiver
+ReservationReceiver -> SNS: Publish BE Event
+activate SNS
+SNS --> ReservationReceiver: BE Confirmation
+deactivate SNS
+ReservationReceiver -> SQS: Send BE Event
+activate SQS
+SQS -> ReservationProcessor: BE Event Message
+deactivate SQS
+deactivate ReservationReceiver
+
+activate ReservationProcessor
+ReservationProcessor -> BookingEngine: Retrieve BE Booking Details
+activate BookingEngine
+BookingEngine --> ReservationProcessor: BE Booking Details
+deactivate BookingEngine
+ReservationProcessor -> DataCorrection: Correct BE Data Errors
+activate DataCorrection
+DataCorrection --> ReservationProcessor: Corrected BE Booking Details
+deactivate DataCorrection
+ReservationProcessor -> Database: Query ODS Master Data
 activate Database
-Database --> MasterDataProcessor: Master Data
+Database --> ReservationProcessor: ODS Master Data
 deactivate Database
-MasterDataProcessor -> MasterDataProcessor: Find Differences
-MasterDataProcessor -> Database: Save Differences
-activate Database
-Database --> MasterDataProcessor: Confirmation
+ReservationProcessor -> Enrichment: Enrich BE Booking Details
+activate Enrichment
+Enrichment --> ReservationProcessor: Enriched BE Booking Details
+deactivate Enrichment
+ReservationProcessor -> Database: Save BE Booking Details
+activate Databaseß
+Database --> ReservationProcessor: Confirmation
 deactivate Database
-deactivate MasterDataProcessor
+deactivate ReservationProcessor
 end
 
 @enduml
