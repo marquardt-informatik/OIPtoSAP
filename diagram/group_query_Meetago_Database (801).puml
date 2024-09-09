@@ -2,8 +2,9 @@
 !define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
 !include AWSPuml/AWSCommon.puml
 !include AWSPuml/ApplicationIntegration/APIGateway.puml
-!include AWSPuml/ApplicationIntegration/MQ.puml
-!include AWSPuml/ApplicationIntegration/MQBroker.puml
+' !include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/SimpleQueueService.puml
+' !include AWSPuml/ApplicationIntegration/MQBroker.puml
 !include AWSPuml/Compute/LambdaLambdaFunction.puml
 !include AWSPuml/General/Documents.puml
 !include AWSPuml/Database/DynamoDB.puml
@@ -14,6 +15,8 @@
 !include AWSPuml/GroupIcons/CorporateDataCenter.puml
 !include AWSPuml/General/Internetalt1.puml
 !include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/Database/AuroraPostgreSQLInstance.puml
+!include AWSPuml/ApplicationIntegration/EventBridge.puml
 'skinparam backgroundColor #EEEBDC
 skinparam handwritten true
 
@@ -25,80 +28,94 @@ hide footbox
 
 box Legacy Systems
 $AWSIcon(Internetalt1, "Meetago", "") as MeeetagoAPI
-$AWSIcon(Internetalt1, "OIP Processor", "") as OIPProcessor
-$AWSIcon(Internetalt1, "OIP Interface", "") as OIPGateway
-$AWSIcon(Internetalt1, "BookingEngine", "") as BookingEngine
 endbox
 
 box AWS Cloud
-$AWSIcon(APIGateway, "Legacy API", "API Gateway") as LegacyAPI
-$AWSIcon(LambdaLambdaFunction, "Reservation Receiver", "Lambda") as ReservationReceiver
-$AWSIcon(LambdaLambdaFunction, "Master Data Receiver", "Lambda") as MasterDataReceiver
-$AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
-$AWSIcon(MQ, "Subscriber", "SQS") as SQS
-$AWSIcon(LambdaLambdaFunction, "Legacy Processor", "Lambda") as LegacyProcessor
-$AWSIcon(LambdaLambdaFunction, "Master Data Processor", "Lambda") as MasterDataProcessor
-$AWSIcon(LambdaLambdaFunction, "Reservation Processor", "Lambda") as ReservationProcessor
-$AWSIcon(LambdaLambdaFunction, "Data Correction", "Lambda") as DataCorrection
-$AWSIcon(LambdaLambdaFunction, "Enrichment", "Lambda") as Enrichment
-$AWSIcon(DynamoDB, "ODS", "Database") as Database
-$AWSIcon(LambdaLambdaFunction, "Scheduler", "Lambda") as Scheduler
-$AWSIcon(APIGateway, "SAP Receiver", "API Gateway") as APISAPChanges
+$AWSIcon(EventBridge, "Scheduler", "EventBridge") as Scheduler
+$AWSIcon(LambdaLambdaFunction, "Records & Hotels", "Loader Lambdas") as RecordsHotelsUpdates
+$AWSIcon(AuroraPostgreSQLInstance, "Meetago Cach", "DB Schema") as MeetagoCach
+$AWSIcon(LambdaLambdaFunction, "Queue Loader", "Lambda") as QueueLoader
+$AWSIcon(SimpleQueueService, "Data Queue", "SQS") as SQS
+$AWSIcon(LambdaLambdaFunction, "Data Processor", "Lambda") as DataProcessor
+$AWSIcon(AuroraPostgreSQLInstance, "Reservations", "DB Schema") as Reservations
+$AWSIcon(LambdaLambdaFunction, "Bookings Loader", "Lambda") as BookingsLoader
+$AWSIcon(SimpleQueueService, "To Atena Queue", "SQS") as AthenaQueue
+$AWSIcon(LambdaLambdaFunction, "To Athena Sender", "Lambda") as ToAthenaSender
+$AWSIcon(DynamoDB, "ODS", "Database") as Datalake
+
 endbox
 
-box SAP
-$AWSIcon(Internetalt1, "SAP API", "Endpunkt") as SAPAPI
-$AWSIcon(Internetalt1, "SAP", "") as SAP
-endbox
 
 title Group query Meetago Database
 
 autonumber 801 "<b>[000]"
 group query Meetago Database
-Scheduler --> LegacyProcessor: Time-triggered Event
-activate LegacyProcessor
-LegacyProcessor -> Database: Query Meetago Last Date Changed
-activate Database
-Database --> LegacyProcessor: Last Meetago Date Changed
-deactivate Database
-LegacyProcessor -> MeeetagoAPI: Query Meetago Reservation after last transfer
-activate MeeetagoAPI
-MeeetagoAPI --> LegacyProcessor: Meetago Reservations
-deactivate MeeetagoAPI
 
-LegacyProcessor -> SNS: Publish Meetago Event
-activate SNS
-SNS --> LegacyProcessor: Confirmation
-deactivate SNS
-LegacyProcessor -> SQS: Send Meetago Event
-deactivate LegacyProcessor
+activate Scheduler
+Scheduler --> RecordsHotelsUpdates: Dayly Event at 00:00
+deactivate Scheduler
+activate RecordsHotelsUpdates
+RecordsHotelsUpdates -> MeeetagoAPI: Query Meetago Records Updates
+activate MeeetagoAPI
+MeeetagoAPI --> RecordsHotelsUpdates: Meetago Records Updates
+deactivate MeeetagoAPI
+RecordsHotelsUpdates -> MeetagoCach: Records Updates
+activate MeetagoCach
+RecordsHotelsUpdates -> MeeetagoAPI: Query Meetago Hotels Updates
+activate MeeetagoAPI
+MeeetagoAPI --> RecordsHotelsUpdates: Meetago Hotels Updates
+deactivate MeeetagoAPI
+RecordsHotelsUpdates -> MeetagoCach: Hotels Updates
+deactivate RecordsHotelsUpdates
+deactivate MeetagoCach
+
+activate Scheduler
+Scheduler --> QueueLoader: Lambda Trigger Event
+deactivate Scheduler
+
+activate QueueLoader
+QueueLoader -> MeetagoCach: Request Updated Records Numbers
+activate MeetagoCach
+MeetagoCach -> QueueLoader: Updated Records Numbers
+deactivate MeetagoCach
+QueueLoader -> SQS: Updated Records Numbers
+deactivate QueueLoader
+
 activate SQS
-SQS -> ReservationProcessor: Event Message
+SQS -> DataProcessor: Singe Record Number per Lambda Instance
 deactivate SQS
 
-
-activate ReservationProcessor
-ReservationProcessor -> MeeetagoAPI: Retrieve Meetago Booking Details
+activate DataProcessor
+DataProcessor -> MeeetagoAPI: Query Meetago Updates
 activate MeeetagoAPI
-MeeetagoAPI --> ReservationProcessor: Meetago Booking Details
+MeeetagoAPI --> DataProcessor: Meetago Updates
 deactivate MeeetagoAPI
-ReservationProcessor -> DataCorrection: Correct Meetago Data Errors
-activate DataCorrection
-DataCorrection --> ReservationProcessor: Corrected Meetago Booking Details
-deactivate DataCorrection
-ReservationProcessor -> Database: Query Master Data
-activate Database
-Database --> ReservationProcessor: Master Data
-deactivate Database
-ReservationProcessor -> Enrichment: Enrich Meetago Booking Details
-activate Enrichment
-Enrichment --> ReservationProcessor: Enriched Meetago Booking Details
-deactivate Enrichment
-ReservationProcessor -> Database: Save Meetago Booking Details
-activate Database
-Database --> ReservationProcessor: Confirmation
-deactivate Database
-deactivate ReservationProcessor
+DataProcessor -> Reservations: Store Updates, Retrieve Bookings
+deactivate DataProcessor
+
+
+activate Reservations
+activate Scheduler
+Scheduler --> BookingsLoader: Lambda Trigger Event
+deactivate Scheduler
+activate BookingsLoader
+BookingsLoader -> Reservations: Request Booking IDs
+Reservations -> BookingsLoader: Booking IDs to the Queue
+deactivate Reservations
+BookingsLoader -> AthenaQueue: Load Booking IDs to the Queue
+deactivate BookingsLoader
+
+activate AthenaQueue
+AthenaQueue -> ToAthenaSender: Single Booking ID
+deactivate AthenaQueue
+
+activate ToAthenaSender
+ToAthenaSender -> Reservations: Request Booking Info for Booking ID
+activate Reservations
+Reservations -> ToAthenaSender: Booking Info for Booking ID
+deactivate Reservations
+ToAthenaSender -> Datalake: Booking Info for Booking ID
+deactivate ToAthenaSender
 end
 
 @enduml
