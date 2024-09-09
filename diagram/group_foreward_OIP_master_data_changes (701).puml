@@ -24,7 +24,6 @@ participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
 hide footbox
 
 box Legacy Systems
-$AWSIcon(Internetalt1, "Meetago", "") as MeeetagoAPI
 $AWSIcon(Internetalt1, "OIP Processor", "") as OIPProcessor
 $AWSIcon(Internetalt1, "OIP Interface", "") as OIPGateway
 $AWSIcon(Internetalt1, "BookingEngine", "") as BookingEngine
@@ -32,24 +31,13 @@ endbox
 
 box AWS Cloud
 $AWSIcon(APIGateway, "Legacy API", "API Gateway") as LegacyAPI
-$AWSIcon(LambdaLambdaFunction, "Reservation Receiver", "Lambda") as ReservationReceiver
 $AWSIcon(LambdaLambdaFunction, "Master Data Receiver", "Lambda") as MasterDataReceiver
 $AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
 $AWSIcon(MQ, "Subscriber", "SQS") as SQS
-$AWSIcon(LambdaLambdaFunction, "Legacy Processor", "Lambda") as LegacyProcessor
 $AWSIcon(LambdaLambdaFunction, "Master Data Processor", "Lambda") as MasterDataProcessor
-$AWSIcon(LambdaLambdaFunction, "Reservation Processor", "Lambda") as ReservationProcessor
-$AWSIcon(LambdaLambdaFunction, "Data Correction", "Lambda") as DataCorrection
-$AWSIcon(LambdaLambdaFunction, "Enrichment", "Lambda") as Enrichment
 $AWSIcon(DynamoDB, "ODS", "Database") as Database
-$AWSIcon(LambdaLambdaFunction, "Scheduler", "Lambda") as Scheduler
-$AWSIcon(APIGateway, "SAP Receiver", "API Gateway") as APISAPChanges
 endbox
 
-box SAP
-$AWSIcon(Internetalt1, "SAP API", "Endpunkt") as SAPAPI
-$AWSIcon(Internetalt1, "SAP", "") as SAP
-endbox
 
 title Group foreward OIP master data changes
 
