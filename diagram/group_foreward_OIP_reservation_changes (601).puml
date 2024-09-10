@@ -51,7 +51,7 @@ activate ReservationProcessor
 alt Need OIP Booking Details
 ReservationProcessor -> OIPGateway: Query OIP Booking Details
 activate OIPGateway
-OIPGateway -> OIPProcessor: Foreward request
+OIPGateway -> OIPProcessor: Forward request
 activate OIPProcessor
 OIPProcessor --> OIPGateway: OIP Booking Details Response
 deactivate OIPProcessor
