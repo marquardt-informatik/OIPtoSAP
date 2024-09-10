@@ -1,4 +1,4 @@
-@startuml Group foreward SAP Postings and Master Data to OIP
+@startuml Group forward SAP Postings and Master Data to OIP
 !define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
 !include AWSPuml/AWSCommon.puml
 !include AWSPuml/ApplicationIntegration/APIGateway.puml
@@ -37,10 +37,10 @@ $AWSIcon(DynamoDB, "ODS", "Database") as Database
 endbox
 
 
-title Group foreward SAP Postings and Master Data to OIP
+title Group forward SAP Postings and Master Data to OIP
 
 autonumber 501 "<b>[000]"
-group foreward SAP Postings and Master Data to OIP
+group forward SAP Postings and Master Data to OIP
 activate API
 API --> ReservationProcessor: Time-triggered Event
 deactivate API

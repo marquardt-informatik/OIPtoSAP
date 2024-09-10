@@ -60,7 +60,7 @@ Scheduler --> ReservationProcessor: Time-triggered Event
 activate ReservationProcessor
 ReservationProcessor -> SAPAPI: Send Time-triggered Data to SAP API
 activate SAPAPI
-SAPAPI -> SAP: Foreward CIT to BRIM
+SAPAPI -> SAP: Forward CIT to BRIM
 activate SAP
 SAPAPI <-- SAP: Response from BRIM
 deactivate SAP

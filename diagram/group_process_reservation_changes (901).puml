@@ -48,7 +48,7 @@ Database --> ReservationProcessor: Changes Response
 deactivate Database
 ReservationProcessor -> SAPAPI: Send Time-triggered Data to SAP API
 activate SAPAPI
-SAPAPI -> SAP: Foreward corrected CIT to BRIM
+SAPAPI -> SAP: Forward corrected CIT to BRIM
 activate SAP
 SAPAPI <-- SAP: Response from BRIM
 deactivate SAP

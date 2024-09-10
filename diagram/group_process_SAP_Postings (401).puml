@@ -62,11 +62,11 @@ deactivate APISAPChanges
 activate ReservationProcessor
 ReservationProcessor -> SAPAPI: Query SAP Data
 activate SAPAPI
-SAPAPI->SAP: Foreward SAP Data request
+SAPAPI->SAP: Forward SAP Data request
 activate SAP
 SAP --> SAPAPI: SAP Data Response
 deactivate SAP
-SAPAPI --> ReservationProcessor: Foreward SAP Data Response
+SAPAPI --> ReservationProcessor: Forward SAP Data Response
 deactivate SAPAPI
 ReservationProcessor -> Database: Query ODS Reservation Data
 activate Database

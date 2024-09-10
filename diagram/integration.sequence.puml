@@ -62,7 +62,7 @@ deactivate APISAPChanges
 activate MasterDataProcessor
 MasterDataProcessor -> SAPAPI: Query SAP Data
 activate SAPAPI
-SAPAPI->SAP: Foreward request
+SAPAPI->SAP: Forward request
 activate SAP
 SAP --> SAPAPI: SAP Data Response
 deactivate SAP
@@ -129,7 +129,7 @@ Scheduler --> ReservationProcessor: Time-triggered Event
 activate ReservationProcessor
 ReservationProcessor -> SAPAPI: Send Time-triggered Data to SAP API
 activate SAPAPI
-SAPAPI -> SAP: Foreward CIT to BRIM
+SAPAPI -> SAP: Forward CIT to BRIM
 activate SAP
 SAPAPI <-- SAP: Response from BRIM
 deactivate SAP
@@ -151,11 +151,11 @@ deactivate APISAPChanges
 activate ReservationProcessor
 ReservationProcessor -> SAPAPI: Query SAP Data
 activate SAPAPI
-SAPAPI->SAP: Foreward SAP Data request
+SAPAPI->SAP: Forward SAP Data request
 activate SAP
 SAP --> SAPAPI: SAP Data Response
 deactivate SAP
-SAPAPI --> ReservationProcessor: Foreward SAP Data Response
+SAPAPI --> ReservationProcessor: Forward SAP Data Response
 deactivate SAPAPI
 ReservationProcessor -> Database: Query ODS Reservation Data
 activate Database
@@ -170,7 +170,7 @@ deactivate ReservationProcessor
 end
 
 autonumber 501 "<b>[000]"
-group foreward SAP Postings and Master Data to OIP
+group forward SAP Postings and Master Data to OIP
 Scheduler --> ReservationProcessor: Time-triggered Event
 activate ReservationProcessor
 ReservationProcessor -> Database: Query ODS Data
@@ -190,7 +190,7 @@ deactivate ReservationProcessor
 end
 
 autonumber 601 "<b>[000]"
-group foreward OIP reservation changes
+group forward OIP reservation changes
 OIPProcessor -> LegacyAPI: Invoice Correction Event
 activate LegacyAPI
 LegacyAPI -> ReservationReceiver: Forward OIP Correction Event
@@ -209,7 +209,7 @@ deactivate SQS
 activate ReservationProcessor
 ReservationProcessor -> OIPGateway: Query OIP Booking Details
 activate OIPGateway
-OIPGateway->OIPProcessor: Foreward request
+OIPGateway->OIPProcessor: Forward request
 activate OIPProcessor
 OIPProcessor --> OIPGateway: OIP Booking Details Response
 deactivate OIPProcessor
@@ -231,7 +231,7 @@ deactivate ReservationProcessor
 end
 
 autonumber 701 "<b>[000]"
-group foreward OIP master data changes
+group forward OIP master data changes
 OIPProcessor -> LegacyAPI: OIP Master data change Event
 activate LegacyAPI
 LegacyAPI -> MasterDataReceiver: Forward OIP Master Data Event
@@ -250,7 +250,7 @@ deactivate SQS
 activate MasterDataProcessor
 MasterDataProcessor -> OIPGateway: Query OIP Master Data
 activate OIPGateway
-OIPGateway->OIPProcessor: Foreward request
+OIPGateway->OIPProcessor: Forward request
 activate OIPProcessor
 OIPProcessor --> OIPGateway: OIP Master Data Response
 deactivate OIPProcessor
@@ -326,7 +326,7 @@ Database --> ReservationProcessor: Changes Response
 deactivate Database
 ReservationProcessor -> SAPAPI: Send Time-triggered Data to SAP API
 activate SAPAPI
-SAPAPI -> SAP: Foreward corrected CIT to BRIM
+SAPAPI -> SAP: Forward corrected CIT to BRIM
 activate SAP
 SAPAPI <-- SAP: Response from BRIM
 deactivate SAP
@@ -349,11 +349,11 @@ Database --> MasterDataProcessor: Master Data
 deactivate Database
 MasterDataProcessor -> SAPAPI: Send Time-triggered Data to SAP API
 activate SAPAPI
-SAPAPI->SAP: Foreward SAP Data request
+SAPAPI->SAP: Forward SAP Data request
 activate SAP
 SAP --> SAPAPI: SAP Data Response
 deactivate SAP
-SAPAPI --> MasterDataProcessor: Foreward SAP Data Response
+SAPAPI --> MasterDataProcessor: Forward SAP Data Response
 deactivate SAPAPI
 deactivate MasterDataProcessor
 end

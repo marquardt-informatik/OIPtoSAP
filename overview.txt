@@ -16,16 +16,16 @@
 | 206    | BE Event Message                             | SQS               | ReservationProcessor |
 | 301    | Time-triggered Event                         | Scheduler         | ReservationProcessor |
 | 302    | Send Time-triggered Data to SAP API          | ReservationProcessor | SAPAPI            |
-| 303    | Foreward CIT to BRIM                         | SAPAPI            | SAP               |
+| 303    | Forward CIT to BRIM                         | SAPAPI            | SAP               |
 | 304    | Response from BRIM                           | SAP               | SAPAPI            |
 | 305    | CIT Response                                 | SAPAPI            | ReservationProcessor |
 | 306    | Save CIT Time-triggered Data                 | ReservationProcessor | Database          |
 | 401    | SAP Posting Event                            | SAP               | APISAPChanges     |
 | 402    | Forward SAP Posting Event                     | APISAPChanges     | ReservationProcessor |
 | 403    | Query SAP Data                               | ReservationProcessor | SAPAPI            |
-| 404    | Foreward SAP Data request                     | SAPAPI            | SAP               |
+| 404    | Forward SAP Data request                     | SAPAPI            | SAP               |
 | 405    | SAP Data Response                            | SAP               | SAPAPI            |
-| 406    | Foreward SAP Data Response                    | SAPAPI            | ReservationProcessor |
+| 406    | Forward SAP Data Response                    | SAPAPI            | ReservationProcessor |
 | 407    | Query ODS Reservation Data                    | ReservationProcessor | Database          |
 | 501    | Time-triggered Event                         | Scheduler         | ReservationProcessor |
 | 502    | Send SAP Postings and Master Data             | ReservationProcessor | OIPGateway        |

@@ -62,7 +62,7 @@ deactivate APISAPChanges
 activate MasterDataProcessor
 MasterDataProcessor -> SAPAPI: Query SAP Data
 activate SAPAPI
-SAPAPI->SAP: Foreward request
+SAPAPI->SAP: Forward request
 activate SAP
 SAP --> SAPAPI: SAP Data Response
 deactivate SAP

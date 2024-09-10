@@ -48,11 +48,11 @@ Database --> MasterDataProcessor: Master Data
 deactivate Database
 MasterDataProcessor -> SAPAPI: Send Time-triggered Data to SAP API
 activate SAPAPI
-SAPAPI->SAP: Foreward SAP Data request
+SAPAPI->SAP: Forward SAP Data request
 activate SAP
 SAP --> SAPAPI: SAP Data Response
 deactivate SAP
-SAPAPI --> MasterDataProcessor: Foreward SAP Data Response
+SAPAPI --> MasterDataProcessor: Forward SAP Data Response
 deactivate SAPAPI
 deactivate MasterDataProcessor
 end
