@@ -14,6 +14,7 @@
 !include AWSPuml/GroupIcons/CorporateDataCenter.puml
 !include AWSPuml/General/Internetalt1.puml
 !include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/Database/AuroraPostgreSQLInstance.puml
 'skinparam backgroundColor #EEEBDC
 skinparam handwritten true
 
@@ -31,6 +32,7 @@ endbox
 box AWS Cloud
 $AWSIcon(APIGateway, "Reservation Processor API", "API Gateway") as API
 $AWSIcon(LambdaLambdaFunction, "Reservation Processor", "Lambda") as ReservationProcessor
+$AWSIcon(AuroraPostgreSQLInstance, "Mappings DB", "PostgreSQL DB") as MappingsDB
 $AWSIcon(DynamoDB, "ODS", "Database") as Database
 endbox
 
@@ -45,8 +47,12 @@ deactivate API
 activate ReservationProcessor
 ReservationProcessor -> Database: Query ODS Data
 activate Database
-Database --> ReservationProcessor: ODS Data
+Database --> MappingsDB: ODS Data
 deactivate Database
+activate MappingsDB
+MappingsDB --> MappingsDB: Replace SAP values with OIP acceptible values
+MappingsDB --> ReservationProcessor: ODS data adjusted for OIP
+deactivate MappingsDB
 ReservationProcessor -> OIPGateway: Send SAP Postings and Master Data
 activate OIPGateway
 OIPGateway -> OIPProcessor: Forward SAP Postings and Master Data Event
