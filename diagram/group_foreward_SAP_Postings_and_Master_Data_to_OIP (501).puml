@@ -52,9 +52,10 @@ deactivate Database
 activate MappingsDB
 MappingsDB --> MappingsDB: Replace SAP values with OIP acceptible values
 MappingsDB --> ReservationProcessor: ODS data adjusted for OIP
-deactivate MappingsDB
 ReservationProcessor -> OIPGateway: Send SAP Postings and Master Data
 activate OIPGateway
+ReservationProcessor --> MappingsDB: Mark the corresponding DB records as sent
+deactivate MappingsDB
 OIPGateway -> OIPProcessor: Forward SAP Postings and Master Data Event
 activate OIPProcessor
 OIPProcessor -> OIPProcessor: process SAP Postings and Master Data Event
