@@ -1,4 +1,4 @@
-@startuml Group foreward OIP master data changes
+@startuml Group forward OIP master data changes
 !define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
 !include AWSPuml/AWSCommon.puml
 !include AWSPuml/ApplicationIntegration/APIGateway.puml
@@ -14,6 +14,7 @@
 !include AWSPuml/GroupIcons/CorporateDataCenter.puml
 !include AWSPuml/General/Internetalt1.puml
 !include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/Database/AuroraPostgreSQLInstance.puml
 'skinparam backgroundColor #EEEBDC
 skinparam handwritten true
 
@@ -31,47 +32,46 @@ endbox
 
 box AWS Cloud
 $AWSIcon(APIGateway, "Legacy API", "API Gateway") as LegacyAPI
-$AWSIcon(LambdaLambdaFunction, "Master Data Receiver", "Lambda") as MasterDataReceiver
-$AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
-$AWSIcon(MQ, "Subscriber", "SQS") as SQS
 $AWSIcon(LambdaLambdaFunction, "Master Data Processor", "Lambda") as MasterDataProcessor
+$AWSIcon(AuroraPostgreSQLInstance, "Mappings DB", "PostgreSQL DB") as MappingsDB
 $AWSIcon(DynamoDB, "ODS", "Database") as Database
 endbox
 
 
-title Group foreward OIP master data changes
+title Group forward OIP master data changes
 
 autonumber 701 "<b>[000]"
-group foreward OIP master data changes
+group forward OIP master data changes
 OIPProcessor -> LegacyAPI: OIP Master data change Event
 activate LegacyAPI
-LegacyAPI -> MasterDataReceiver: Forward OIP Master Data Event
+LegacyAPI -> MasterDataProcessor: Forward OIP Master Data Event
 deactivate LegacyAPI
-activate MasterDataReceiver
-MasterDataReceiver -> SNS: Publish Master data change Event
-activate SNS
-SNS --> MasterDataReceiver: Confirmation
-deactivate MasterDataReceiver
-SNS -> SQS: Send OIP Correction Event
-deactivate SNS
-activate SQS
-SQS -> MasterDataProcessor: Event Message
-deactivate SQS
-
 activate MasterDataProcessor
+
+alt Need OIP Master Data details
 MasterDataProcessor -> OIPGateway: Query OIP Master Data
 activate OIPGateway
-OIPGateway->OIPProcessor: Foreward request
+OIPGateway->OIPProcessor: Forward request
 activate OIPProcessor
 OIPProcessor --> OIPGateway: OIP Master Data Response
 deactivate OIPProcessor
 OIPGateway --> MasterDataProcessor: OIP Master Data Response
 deactivate OIPGateway
+end
+
+MasterDataProcessor -> MappingsDB: Send for verification and SAP values correction
+activate MappingsDB
+MappingsDB --> MasterDataProcessor: Data with corrected and verified values
+deactivate MappingsDB
+
+alt Need ODS Master data
 MasterDataProcessor -> Database: Query Master Data
 activate Database
 Database --> MasterDataProcessor: Master Data
 deactivate Database
 MasterDataProcessor -> MasterDataProcessor: Find Differences
+end
+
 MasterDataProcessor -> Database: Save Differences
 activate Database
 Database --> MasterDataProcessor: Confirmation
