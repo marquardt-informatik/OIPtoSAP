@@ -1,4 +1,4 @@
-@startuml Group foreward OIP reservation changes
+@startuml Group forward OIP reservation changes
 !define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
 !include AWSPuml/AWSCommon.puml
 !include AWSPuml/ApplicationIntegration/APIGateway.puml
@@ -14,6 +14,7 @@
 !include AWSPuml/GroupIcons/CorporateDataCenter.puml
 !include AWSPuml/General/Internetalt1.puml
 !include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/Database/AuroraPostgreSQLInstance.puml
 'skinparam backgroundColor #EEEBDC
 skinparam handwritten true
 
@@ -30,51 +31,53 @@ endbox
 
 box AWS Cloud
 $AWSIcon(APIGateway, "Legacy API", "API Gateway") as LegacyAPI
-$AWSIcon(LambdaLambdaFunction, "Reservation Receiver", "Lambda") as ReservationReceiver
-$AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
-$AWSIcon(MQ, "Subscriber", "SQS") as SQS
 $AWSIcon(LambdaLambdaFunction, "Reservation Processor", "Lambda") as ReservationProcessor
+$AWSIcon(AuroraPostgreSQLInstance, "Mappings DB", "PostgreSQL DB") as MappingsDB
 $AWSIcon(LambdaLambdaFunction, "Enrichment", "Lambda") as Enrichment
 $AWSIcon(DynamoDB, "ODS", "Database") as Database
 endbox
 
 
-title Group foreward OIP reservation changes
+title Group forward OIP reservation changes
 
 autonumber 601 "<b>[000]"
-group foreward OIP reservation changes
-OIPProcessor -> LegacyAPI: Invoice Correction Event
+group forward OIP reservation changes
+OIPProcessor -> LegacyAPI: Correction Data
 activate LegacyAPI
-LegacyAPI -> ReservationReceiver: Forward OIP Correction Event
+LegacyAPI -> ReservationProcessor: Forward OIP Correction Data
 deactivate LegacyAPI
-activate ReservationReceiver
-ReservationReceiver -> SNS: Publish OIP Correction Event
-activate SNS
-SNS --> ReservationReceiver: Confirmation
-deactivate ReservationReceiver
-SNS -> SQS: Send OIP Correction Event
-deactivate SNS
-activate SQS
-SQS -> ReservationProcessor: Event Message
-deactivate SQS
-
 activate ReservationProcessor
+
+alt Need OIP Booking Details
 ReservationProcessor -> OIPGateway: Query OIP Booking Details
 activate OIPGateway
-OIPGateway->OIPProcessor: Foreward request
+OIPGateway -> OIPProcessor: Foreward request
 activate OIPProcessor
 OIPProcessor --> OIPGateway: OIP Booking Details Response
 deactivate OIPProcessor
 OIPGateway --> ReservationProcessor: OIP Booking Details Response
 deactivate OIPGateway
+end
+
+ReservationProcessor -> MappingsDB: Send for verification and SAP values correction
+activate MappingsDB
+MappingsDB --> ReservationProcessor: Data with corrected and verified values
+deactivate MappingsDB
+
+alt Need ODS Booking Details
 ReservationProcessor -> Database: Query Booking Details
 activate Database
 Database --> ReservationProcessor: Booking Details
 deactivate Database
+end
+
+alt Need to Enrich OIP Booking Details
 ReservationProcessor -> Enrichment: Enrich OIP Booking Details
 activate Enrichment
 Enrichment --> ReservationProcessor: Enriched OIP Booking Details
 deactivate Enrichment
+end
+
 ReservationProcessor -> Database: Save OIP Booking Details
 activate Database
 Database --> ReservationProcessor: Confirmation
