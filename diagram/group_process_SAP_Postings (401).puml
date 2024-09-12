@@ -1,0 +1,66 @@
+@startuml Group process SAP Postings
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/MQBroker.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+'skinparam backgroundColor #EEEBDC
+skinparam handwritten true
+
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
+
+hide footbox
+
+box AWS Cloud
+$AWSIcon(LambdaLambdaFunction, "Reservation Processor", "Lambda") as ReservationProcessor
+$AWSIcon(DynamoDB, "ODS", "Database") as Database
+$AWSIcon(APIGateway, "SAP Receiver", "API Gateway") as APISAPChanges
+endbox
+
+box SAP
+$AWSIcon(Internetalt1, "SAP API", "Endpunkt") as SAPAPI
+$AWSIcon(Internetalt1, "SAP", "") as SAP
+endbox
+
+title Group process SAP Postings
+
+autonumber 401 "<b>[000]"
+group process SAP Postings
+SAP -> APISAPChanges: SAP Posting Event
+activate APISAPChanges
+APISAPChanges -> ReservationProcessor: Forward SAP Posting Event
+deactivate APISAPChanges
+activate ReservationProcessor
+ReservationProcessor -> SAPAPI: Query SAP Data
+activate SAPAPI
+SAPAPI->SAP: Forward SAP Data request
+activate SAP
+SAP --> SAPAPI: SAP Data Response
+deactivate SAP
+SAPAPI --> ReservationProcessor: Forward SAP Data Response
+deactivate SAPAPI
+ReservationProcessor -> Database: Query ODS Reservation Data
+activate Database
+Database --> ReservationProcessor: ODS Reservation Data
+deactivate Database
+ReservationProcessor -> ReservationProcessor: Find Differences
+ReservationProcessor -> Database: Save Differences
+activate Database
+Database --> ReservationProcessor: Confirmation
+deactivate Database
+deactivate ReservationProcessor
+end
+
+@enduml

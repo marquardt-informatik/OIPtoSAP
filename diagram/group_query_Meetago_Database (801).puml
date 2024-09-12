@@ -1,0 +1,121 @@
+@startuml Group query Meetago Database
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+' !include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/SimpleQueueService.puml
+' !include AWSPuml/ApplicationIntegration/MQBroker.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/Database/AuroraPostgreSQLInstance.puml
+!include AWSPuml/ApplicationIntegration/EventBridge.puml
+'skinparam backgroundColor #EEEBDC
+skinparam handwritten true
+
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
+
+hide footbox
+
+box Legacy Systems
+$AWSIcon(Internetalt1, "Meetago", "") as MeeetagoAPI
+endbox
+
+box AWS Cloud
+$AWSIcon(EventBridge, "Scheduler", "EventBridge") as Scheduler
+$AWSIcon(LambdaLambdaFunction, "Records & Hotels", "Loader Lambdas") as RecordsHotelsUpdates
+$AWSIcon(AuroraPostgreSQLInstance, "Meetago Cach", "DB Schema") as MeetagoCach
+$AWSIcon(LambdaLambdaFunction, "Queue Loader", "Lambda") as QueueLoader
+$AWSIcon(SimpleQueueService, "Data Queue", "SQS") as SQS
+$AWSIcon(LambdaLambdaFunction, "Data Processor", "Lambda") as DataProcessor
+$AWSIcon(AuroraPostgreSQLInstance, "Reservations", "DB Schema") as Reservations
+$AWSIcon(LambdaLambdaFunction, "Bookings Loader", "Lambda") as BookingsLoader
+$AWSIcon(SimpleQueueService, "To Atena Queue", "SQS") as AthenaQueue
+$AWSIcon(LambdaLambdaFunction, "To Athena Sender", "Lambda") as ToAthenaSender
+$AWSIcon(DynamoDB, "ODS", "Database") as Datalake
+
+endbox
+
+
+title Group query Meetago Database
+
+autonumber 801 "<b>[000]"
+group query Meetago Database
+
+activate Scheduler
+Scheduler --> RecordsHotelsUpdates: Dayly Event at 00:00
+deactivate Scheduler
+activate RecordsHotelsUpdates
+RecordsHotelsUpdates -> MeeetagoAPI: Query Meetago Records Updates
+activate MeeetagoAPI
+MeeetagoAPI --> RecordsHotelsUpdates: Meetago Records Updates
+deactivate MeeetagoAPI
+RecordsHotelsUpdates -> MeetagoCach: Records Updates
+activate MeetagoCach
+RecordsHotelsUpdates -> MeeetagoAPI: Query Meetago Hotels Updates
+activate MeeetagoAPI
+MeeetagoAPI --> RecordsHotelsUpdates: Meetago Hotels Updates
+deactivate MeeetagoAPI
+RecordsHotelsUpdates -> MeetagoCach: Hotels Updates
+deactivate RecordsHotelsUpdates
+deactivate MeetagoCach
+
+activate Scheduler
+Scheduler --> QueueLoader: Lambda Trigger Event
+deactivate Scheduler
+
+activate QueueLoader
+QueueLoader -> MeetagoCach: Request Updated Records Numbers
+activate MeetagoCach
+MeetagoCach -> QueueLoader: Updated Records Numbers
+deactivate MeetagoCach
+QueueLoader -> SQS: Updated Records Numbers
+deactivate QueueLoader
+
+activate SQS
+SQS -> DataProcessor: Singe Record Number per Lambda Instance
+deactivate SQS
+
+activate DataProcessor
+DataProcessor -> MeeetagoAPI: Query Meetago Updates
+activate MeeetagoAPI
+MeeetagoAPI --> DataProcessor: Meetago Updates
+deactivate MeeetagoAPI
+DataProcessor -> Reservations: Store Updates, Retrieve Bookings
+deactivate DataProcessor
+
+
+activate Reservations
+activate Scheduler
+Scheduler --> BookingsLoader: Lambda Trigger Event
+deactivate Scheduler
+activate BookingsLoader
+BookingsLoader -> Reservations: Request Booking IDs
+Reservations -> BookingsLoader: Booking IDs to the Queue
+deactivate Reservations
+BookingsLoader -> AthenaQueue: Load Booking IDs to the Queue
+deactivate BookingsLoader
+
+activate AthenaQueue
+AthenaQueue -> ToAthenaSender: Single Booking ID
+deactivate AthenaQueue
+
+activate ToAthenaSender
+ToAthenaSender -> Reservations: Request Booking Info for Booking ID
+activate Reservations
+Reservations -> ToAthenaSender: Booking Info for Booking ID
+deactivate Reservations
+ToAthenaSender -> Datalake: Booking Info for Booking ID
+deactivate ToAthenaSender
+end
+
+@enduml

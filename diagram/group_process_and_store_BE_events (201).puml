@@ -1,0 +1,86 @@
+@startuml Group process and store BE events
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/MQBroker.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+'skinparam backgroundColor #EEEBDC
+skinparam handwritten true
+
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
+
+hide footbox
+
+box Legacy Systems
+$AWSIcon(Internetalt1, "BookingEngine", "") as BookingEngine
+endbox
+
+box AWS Cloud
+$AWSIcon(APIGateway, "Legacy API", "API Gateway") as LegacyAPI
+$AWSIcon(LambdaLambdaFunction, "Reservation Receiver", "Lambda") as ReservationReceiver
+$AWSIcon(MQBroker, "Publisher", "SNS Topic") as SNS
+$AWSIcon(MQ, "Subscriber", "SQS") as SQS
+$AWSIcon(LambdaLambdaFunction, "Reservation Processor", "Lambda") as ReservationProcessor
+$AWSIcon(LambdaLambdaFunction, "Data Correction", "Lambda") as DataCorrection
+$AWSIcon(LambdaLambdaFunction, "Enrichment", "Lambda") as Enrichment
+$AWSIcon(DynamoDB, "ODS", "Database") as Database
+endbox
+
+
+title Group process and store BE events
+
+
+autonumber  201 "<b>[000]"
+group process and store BE events
+BookingEngine -> LegacyAPI: Send BE \nReservation Event
+activate LegacyAPI
+LegacyAPI -> ReservationReceiver: Forward BE Event
+deactivate LegacyAPI
+activate ReservationReceiver
+ReservationReceiver -> SNS: Publish BE Event
+activate SNS
+SNS --> ReservationReceiver: BE Confirmation
+deactivate SNS
+ReservationReceiver -> SQS: Send BE Event
+activate SQS
+SQS -> ReservationProcessor: BE Event Message
+deactivate SQS
+deactivate ReservationReceiver
+
+activate ReservationProcessor
+ReservationProcessor -> BookingEngine: Retrieve BE Booking Details
+activate BookingEngine
+BookingEngine --> ReservationProcessor: BE Booking Details
+deactivate BookingEngine
+ReservationProcessor -> DataCorrection: Correct BE Data Errors
+activate DataCorrection
+DataCorrection --> ReservationProcessor: Corrected BE Booking Details
+deactivate DataCorrection
+ReservationProcessor -> Database: Query ODS Master Data
+activate Database
+Database --> ReservationProcessor: ODS Master Data
+deactivate Database
+ReservationProcessor -> Enrichment: Enrich BE Booking Details
+activate Enrichment
+Enrichment --> ReservationProcessor: Enriched BE Booking Details
+deactivate Enrichment
+ReservationProcessor -> Database: Save BE Booking Details
+activate Database
+Database --> ReservationProcessor: Confirmation
+deactivate Database
+deactivate ReservationProcessor
+end
+
+@enduml

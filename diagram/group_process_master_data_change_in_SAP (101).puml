@@ -1,0 +1,66 @@
+@startuml Group process master data change in SAP
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v15.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/ApplicationIntegration/MQ.puml
+!include AWSPuml/ApplicationIntegration/MQBroker.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/General/Documents.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/General/User.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFrontEdgeLocation.puml
+!include AWSPuml/GroupIcons/CorporateDataCenter.puml
+!include AWSPuml/General/Internetalt1.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+'skinparam backgroundColor #EEEBDC
+skinparam handwritten true
+
+!procedure $AWSIcon($service, $line1, $line2="")
+participant "$AWSImg($service)\n<b>$line1</b>\n$line2"
+!endprocedure 
+
+hide footbox
+
+box AWS Cloud
+$AWSIcon(LambdaLambdaFunction, "Master Data Processor", "Lambda") as MasterDataProcessor
+$AWSIcon(DynamoDB, "ODS", "Database") as Database
+$AWSIcon(APIGateway, "SAP Receiver", "API Gateway") as APISAPChanges
+endbox
+
+box SAP
+$AWSIcon(Internetalt1, "SAP API", "Endpunkt") as SAPAPI
+$AWSIcon(Internetalt1, "SAP", "") as SAP
+endbox
+
+title Group process master data change in SAP
+
+autonumber  101 "<b>[000]"
+group process master data change in SAP
+SAP -> APISAPChanges: Master Data Change Event
+activate APISAPChanges
+APISAPChanges -> MasterDataProcessor: Forward Event
+deactivate APISAPChanges
+activate MasterDataProcessor
+MasterDataProcessor -> SAPAPI: Query SAP Data
+activate SAPAPI
+SAPAPI->SAP: Forward request
+activate SAP
+SAP --> SAPAPI: SAP Data Response
+deactivate SAP
+SAPAPI --> MasterDataProcessor: SAP Data Response
+deactivate SAPAPI
+MasterDataProcessor -> Database: Query Master Data
+activate Database
+Database --> MasterDataProcessor: Master Data
+deactivate Database
+MasterDataProcessor -> MasterDataProcessor: Find Differences
+MasterDataProcessor -> Database: Save Differences
+activate Database
+Database --> MasterDataProcessor: Confirmation
+deactivate Database
+deactivate MasterDataProcessor
+end
+
+@enduml
